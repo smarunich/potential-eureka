@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ deployment_name }}
+  name: {{ deployment_name }}
+  namespace: {{ deployment_namespace }}
+spec:
+  replicas: {{ deployment_replicas }}
+  selector:
+    matchLabels:
+      app: {{ deployment_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ deployment_name }}
+    spec:
+      containers:
+      - image: {{ deployment_image }}
+        name: {{ deployment_name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ deployment_name }}
+  name: {{ deployment_name }}
+  namespace: {{ deployment_namespace }}
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: {{ deployment_name }}
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ deployment_name }}-{{ idx }}-ingress-host-path.{{ deployment_namespace }}.{{ ingress_domain }}
+  namespace: {{ deployment_namespace }}
+spec:
+ {# {% if tls > 0.5  %}
+  tls:
+  - hosts:
+    - {{ deployment_name }}-{{ idx }}-ingress-host-path.{{ deployment_namespace }}.{{ ingress_domain }}
+    secretName: test-ecdsa-cert1
+ #}
+  rules:
+  - host: {{ deployment_name }}-{{ idx }}-ingress-host-path.{{ deployment_namespace }}.{{ ingress_domain }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ deployment_name }}
+          servicePort: 80
